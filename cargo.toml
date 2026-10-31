@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/mb-client",
+    "crates/mb-taxonomy",
+    "crates/mb-neglect",
+    "crates/mbbrowse",
+]
+resolver = "2"

@@ -1,0 +1,18 @@
+[package]
+name = "mb-client"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+md-5 = "0.10"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "cookies", "gzip"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+csv = "1"
+serde_json = "1"
+ratelimit = "1.0"
+tokio = { version = "1", features = ["full"] }
+[dev-dependencies]
+wiremock = "0.6"

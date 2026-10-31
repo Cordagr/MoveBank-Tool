@@ -1,0 +1,1 @@
+{"key":"http://127.0.0.1:53440|anonymous|attributes=id,name,taxon_ids,number_of_deployments,number_of_individuals,number_of_deployed_locations,timestamp_first_deployed_location,timestamp_last_deployed_location,license_type,i_have_download_access&entity_type=study&study_id=2911040","expiry":1793237291,"data":"id,name,i_have_download_access\n2911040,Galapagos Albatrosses,true"}

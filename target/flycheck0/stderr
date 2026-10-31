@@ -1,0 +1,506 @@
+   0.683846600s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs"
+   0.683903800s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\shirl\\Documents\\Rescui\\target\\debug\\.fingerprint\\mb-neglect-5edfe80312c13583\\dep-lib-mb_neglect"
+   0.683919000s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13437895181, nanos: 20169300 } < FileTime { seconds: 13437895328, nanos: 376737300 }
+   0.684355600s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint: fingerprint dirty for mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("mb_neglect", ["lib"], "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs", Edition2021) }
+   0.684406600s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\shirl\\Documents\\Rescui\\target\\debug\\.fingerprint\\mb-neglect-5edfe80312c13583\\dep-lib-mb_neglect", reference_mtime: FileTime { seconds: 13437895181, nanos: 20169300 }, stale: "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs", stale_mtime: FileTime { seconds: 13437895328, nanos: 376737300 } }))
+   0.687778000s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint: stale: changed "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs"
+   0.687819000s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:           (vs) "C:\\Users\\shirl\\Documents\\Rescui\\target\\debug\\.fingerprint\\mb-neglect-752638b43969e42d\\dep-test-lib-mb_neglect"
+   0.687831600s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 13437895181, nanos: 20169300 } < FileTime { seconds: 13437895328, nanos: 376737300 }
+   0.688292800s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint: fingerprint dirty for mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("mb_neglect", ["lib"], "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs", Edition2021) }
+   0.688338400s  INFO prepare_target{force=false package_id=mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect) target="mb_neglect"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "C:\\Users\\shirl\\Documents\\Rescui\\target\\debug\\.fingerprint\\mb-neglect-752638b43969e42d\\dep-test-lib-mb_neglect", reference_mtime: FileTime { seconds: 13437895181, nanos: 20169300 }, stale: "C:\\Users\\shirl\\Documents\\Rescui\\crates\\mb-neglect\\model.rs", stale_mtime: FileTime { seconds: 13437895328, nanos: 376737300 } }))
+   0.695177800s  INFO prepare_target{force=false package_id=mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse) target="mbbrowse"}: cargo::core::compiler::fingerprint: fingerprint error for mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse)/Check { test: false }/TargetInner { name: "mbbrowse", doc: true, ..: with_path("C:\\Users\\shirl\\Documents\\Rescui\\crates\\mbbrowse\\src\\main.rs", Edition2021) }
+   0.695228900s  INFO prepare_target{force=false package_id=mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse) target="mbbrowse"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\mbbrowse-77a93ebf19f45c80\bin-mbbrowse`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_libgit2_prerelease
+  11: <unknown>
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: git_midx_writer_dump
+  16: git_filter_source_repo
+  17: git_midx_writer_dump
+  18: BaseThreadInitThunk
+  19: RtlUserThreadStart
+   0.724026900s  INFO prepare_target{force=false package_id=anyhow v1.0.104 target="anyhow"}: cargo::core::compiler::fingerprint: fingerprint error for anyhow v1.0.104/Check { test: false }/TargetInner { ..: lib_target("anyhow", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anyhow-1.0.104\\src\\lib.rs", Edition2021) }
+   0.724070400s  INFO prepare_target{force=false package_id=anyhow v1.0.104 target="anyhow"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anyhow-e34b32642adaf049\lib-anyhow`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.726798500s  INFO prepare_target{force=false package_id=clap v4.6.7 target="clap"}: cargo::core::compiler::fingerprint: fingerprint error for clap v4.6.7/Check { test: false }/TargetInner { benched: false, ..: lib_target("clap", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\clap-4.6.7\\src\\lib.rs", Edition2024) }
+   0.726837500s  INFO prepare_target{force=false package_id=clap v4.6.7 target="clap"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\clap-0e09d018a231e849\lib-clap`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_libgit2_prerelease
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: git_midx_writer_dump
+  17: git_filter_source_repo
+  18: git_midx_writer_dump
+  19: BaseThreadInitThunk
+  20: RtlUserThreadStart
+   0.730349300s  INFO prepare_target{force=false package_id=clap_builder v4.6.7 target="clap_builder"}: cargo::core::compiler::fingerprint: fingerprint error for clap_builder v4.6.7/Check { test: false }/TargetInner { benched: false, ..: lib_target("clap_builder", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\clap_builder-4.6.7\\src\\lib.rs", Edition2024) }
+   0.730400200s  INFO prepare_target{force=false package_id=clap_builder v4.6.7 target="clap_builder"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\clap_builder-551ac9dbb7e2f424\lib-clap_builder`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_libgit2_prerelease
+  13: <unknown>
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: git_midx_writer_dump
+  18: git_filter_source_repo
+  19: git_midx_writer_dump
+  20: BaseThreadInitThunk
+  21: RtlUserThreadStart
+   0.731887600s  INFO prepare_target{force=false package_id=anstream v1.0.0 target="anstream"}: cargo::core::compiler::fingerprint: fingerprint error for anstream v1.0.0/Check { test: false }/TargetInner { ..: lib_target("anstream", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anstream-1.0.0\\src\\lib.rs", Edition2021) }
+   0.731928900s  INFO prepare_target{force=false package_id=anstream v1.0.0 target="anstream"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anstream-53d9cd901723732c\lib-anstream`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.733035400s  INFO prepare_target{force=false package_id=anstyle v1.0.14 target="anstyle"}: cargo::core::compiler::fingerprint: fingerprint error for anstyle v1.0.14/Check { test: false }/TargetInner { ..: lib_target("anstyle", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anstyle-1.0.14\\src\\lib.rs", Edition2021) }
+   0.733064500s  INFO prepare_target{force=false package_id=anstyle v1.0.14 target="anstyle"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anstyle-d777feba2b4572be\lib-anstyle`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.733962200s  INFO prepare_target{force=false package_id=anstyle-parse v1.0.0 target="anstyle_parse"}: cargo::core::compiler::fingerprint: fingerprint error for anstyle-parse v1.0.0/Check { test: false }/TargetInner { ..: lib_target("anstyle_parse", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anstyle-parse-1.0.0\\src\\lib.rs", Edition2021) }
+   0.733988400s  INFO prepare_target{force=false package_id=anstyle-parse v1.0.0 target="anstyle_parse"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anstyle-parse-a9171bbd8063c4fa\lib-anstyle_parse`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.735013700s  INFO prepare_target{force=false package_id=utf8parse v0.2.2 target="utf8parse"}: cargo::core::compiler::fingerprint: fingerprint error for utf8parse v0.2.2/Check { test: false }/TargetInner { ..: lib_target("utf8parse", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\utf8parse-0.2.2\\src\\lib.rs", Edition2018) }
+   0.735045900s  INFO prepare_target{force=false package_id=utf8parse v0.2.2 target="utf8parse"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\utf8parse-607e1889bd84bab2\lib-utf8parse`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: git_libgit2_prerelease
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: <unknown>
+  20: git_midx_writer_dump
+  21: git_filter_source_repo
+  22: git_midx_writer_dump
+  23: BaseThreadInitThunk
+  24: RtlUserThreadStart
+   0.736280800s  INFO prepare_target{force=false package_id=anstyle-query v1.1.5 target="anstyle_query"}: cargo::core::compiler::fingerprint: fingerprint error for anstyle-query v1.1.5/Check { test: false }/TargetInner { ..: lib_target("anstyle_query", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anstyle-query-1.1.5\\src\\lib.rs", Edition2021) }
+   0.736332300s  INFO prepare_target{force=false package_id=anstyle-query v1.1.5 target="anstyle_query"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anstyle-query-5cde290372abefa3\lib-anstyle_query`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.738234300s  INFO prepare_target{force=false package_id=anstyle-wincon v3.0.11 target="anstyle_wincon"}: cargo::core::compiler::fingerprint: fingerprint error for anstyle-wincon v3.0.11/Check { test: false }/TargetInner { ..: lib_target("anstyle_wincon", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\anstyle-wincon-3.0.11\\src\\lib.rs", Edition2021) }
+   0.738295300s  INFO prepare_target{force=false package_id=anstyle-wincon v3.0.11 target="anstyle_wincon"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\anstyle-wincon-f023d3f8adbeddc4\lib-anstyle_wincon`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.739918000s  INFO prepare_target{force=false package_id=once_cell_polyfill v1.70.2 target="once_cell_polyfill"}: cargo::core::compiler::fingerprint: fingerprint error for once_cell_polyfill v1.70.2/Check { test: false }/TargetInner { ..: lib_target("once_cell_polyfill", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\once_cell_polyfill-1.70.2\\src\\lib.rs", Edition2021) }
+   0.739989500s  INFO prepare_target{force=false package_id=once_cell_polyfill v1.70.2 target="once_cell_polyfill"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\once_cell_polyfill-6100b0dbdbac72cc\lib-once_cell_polyfill`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_filter_source_repo
+  15: git_libgit2_prerelease
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: <unknown>
+  20: git_midx_writer_dump
+  21: git_filter_source_repo
+  22: git_midx_writer_dump
+  23: BaseThreadInitThunk
+  24: RtlUserThreadStart
+   0.741352700s  INFO prepare_target{force=false package_id=colorchoice v1.0.5 target="colorchoice"}: cargo::core::compiler::fingerprint: fingerprint error for colorchoice v1.0.5/Check { test: false }/TargetInner { ..: lib_target("colorchoice", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\colorchoice-1.0.5\\src\\lib.rs", Edition2021) }
+   0.741400600s  INFO prepare_target{force=false package_id=colorchoice v1.0.5 target="colorchoice"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\colorchoice-ed3bdf3243ecdc69\lib-colorchoice`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.742750700s  INFO prepare_target{force=false package_id=is_terminal_polyfill v1.70.2 target="is_terminal_polyfill"}: cargo::core::compiler::fingerprint: fingerprint error for is_terminal_polyfill v1.70.2/Check { test: false }/TargetInner { ..: lib_target("is_terminal_polyfill", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\is_terminal_polyfill-1.70.2\\src\\lib.rs", Edition2021) }
+   0.742787900s  INFO prepare_target{force=false package_id=is_terminal_polyfill v1.70.2 target="is_terminal_polyfill"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\is_terminal_polyfill-b48d7af580cbca6a\lib-is_terminal_polyfill`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_filter_source_repo
+  14: git_libgit2_prerelease
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: <unknown>
+  19: git_midx_writer_dump
+  20: git_filter_source_repo
+  21: git_midx_writer_dump
+  22: BaseThreadInitThunk
+  23: RtlUserThreadStart
+   0.743838800s  INFO prepare_target{force=false package_id=clap_lex v1.1.1 target="clap_lex"}: cargo::core::compiler::fingerprint: fingerprint error for clap_lex v1.1.1/Check { test: false }/TargetInner { benched: false, ..: lib_target("clap_lex", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\clap_lex-1.1.1\\src\\lib.rs", Edition2024) }
+   0.743869200s  INFO prepare_target{force=false package_id=clap_lex v1.1.1 target="clap_lex"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\clap_lex-c550fccaf65b02e0\lib-clap_lex`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.746282700s  INFO prepare_target{force=false package_id=strsim v0.11.1 target="strsim"}: cargo::core::compiler::fingerprint: fingerprint error for strsim v0.11.1/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("strsim", ["lib"], "C:\\Users\\shirl\\.cargo\\registry\\src\\index.crates.io-1949cf8c6b5b557f\\strsim-0.11.1\\src\\lib.rs", Edition2015) }
+   0.746350100s  INFO prepare_target{force=false package_id=strsim v0.11.1 target="strsim"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\strsim-c25beb9056f7ac0b\lib-strsim`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_filter_source_repo
+  11: git_filter_source_repo
+  12: git_filter_source_repo
+  13: git_libgit2_prerelease
+  14: <unknown>
+  15: <unknown>
+  16: <unknown>
+  17: <unknown>
+  18: git_midx_writer_dump
+  19: git_filter_source_repo
+  20: git_midx_writer_dump
+  21: BaseThreadInitThunk
+  22: RtlUserThreadStart
+   0.748789400s  INFO prepare_target{force=false package_id=mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse) target="mbbrowse"}: cargo::core::compiler::fingerprint: fingerprint error for mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse)/Check { test: true }/TargetInner { name: "mbbrowse", doc: true, ..: with_path("C:\\Users\\shirl\\Documents\\Rescui\\crates\\mbbrowse\\src\\main.rs", Edition2021) }
+   0.748828800s  INFO prepare_target{force=false package_id=mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse) target="mbbrowse"}: cargo::core::compiler::fingerprint:     err: failed to read `C:\Users\shirl\Documents\Rescui\target\debug\.fingerprint\mbbrowse-912985ec245d813a\test-bin-mbbrowse`
+
+Caused by:
+    The system cannot find the file specified. (os error 2)
+
+Stack backtrace:
+   0: git_midx_writer_dump
+   1: git_midx_writer_dump
+   2: git_midx_writer_dump
+   3: git_midx_writer_dump
+   4: git_filter_source_repo
+   5: git_filter_source_repo
+   6: git_filter_source_repo
+   7: git_filter_source_repo
+   8: git_filter_source_repo
+   9: git_filter_source_repo
+  10: git_libgit2_prerelease
+  11: <unknown>
+  12: <unknown>
+  13: <unknown>
+  14: <unknown>
+  15: git_midx_writer_dump
+  16: git_filter_source_repo
+  17: git_midx_writer_dump
+  18: BaseThreadInitThunk
+  19: RtlUserThreadStart
+    Checking anstyle v1.0.14
+    Checking utf8parse v0.2.2
+    Checking once_cell_polyfill v1.70.2
+    Checking anstyle-query v1.1.5
+    Checking colorchoice v1.0.5
+    Checking is_terminal_polyfill v1.70.2
+    Checking clap_lex v1.1.1
+    Checking strsim v0.11.1
+    Checking mb-neglect v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mb-neglect)
+    Checking anyhow v1.0.104
+    Checking anstyle-parse v1.0.0
+    Checking anstyle-wincon v3.0.11
+    Checking anstream v1.0.0
+    Checking clap_builder v4.6.7
+    Checking clap v4.6.7
+    Checking mbbrowse v0.1.0 (C:\Users\shirl\Documents\Rescui\crates\mbbrowse)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.72s

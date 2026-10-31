@@ -1,0 +1,2 @@
+id,name,taxon_ids,number_of_deployments,number_of_individuals,number_of_deployed_locations,timestamp_first_deployed_location,timestamp_last_deployed_location,license_type,i_have_download_access
+2911040,Galapagos Albatrosses,Phoebastria irrorata,28,28,16028,2008-05-31 13:29:31.998,2008-11-06 18:00:55.998,CC_0,true
