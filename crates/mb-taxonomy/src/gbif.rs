@@ -4,10 +4,13 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 const GBIF_MATCH_URL: &str = "https://api.gbif.org/v1/species/match";
 const CACHE_TTL_SECONDS: u64 = 24 * 60 * 60;
+const MAX_ATTEMPTS: u32 = 3;
+const REQUEST_INTERVAL: Duration = Duration::from_millis(100);
+const INITIAL_RETRY_DELAY: Duration = Duration::from_millis(250);
 
 #[derive(Debug, thiserror::Error)]
 pub enum GbifError {
@@ -47,6 +50,7 @@ pub struct GbifClient {
     http: reqwest::Client,
     base_url: String,
     cache_dir: PathBuf,
+    last_request: tokio::sync::Mutex<Option<tokio::time::Instant>>,
 }
 
 impl GbifClient {
@@ -58,6 +62,7 @@ impl GbifClient {
             http,
             base_url: GBIF_MATCH_URL.to_owned(),
             cache_dir: PathBuf::from("data/cache/gbif"),
+            last_request: tokio::sync::Mutex::new(None),
         })
     }
 
@@ -75,21 +80,14 @@ impl GbifClient {
         let body = match self.read_cache(&key)? {
             Some(body) => body,
             None => {
-                let response = self
-                    .http
-                    .get(&self.base_url)
-                    .query(&[("name", name)])
-                    .send()
-                    .await?;
-                if response.status() != StatusCode::OK {
-                    return Err(GbifError::Status(response.status().as_u16()));
-                }
+                let response = self.request_with_retries(name).await?;
                 let body = response.text().await?;
                 let _: GbifMatch = serde_json::from_str(&body)?;
                 self.write_cache(&key, &body)?;
                 body
             }
         };
+
         let matched: GbifMatch = serde_json::from_str(&body)?;
         let is_match = matched.usage_key.is_some()
             && !matched
@@ -97,6 +95,49 @@ impl GbifClient {
                 .as_deref()
                 .is_some_and(|match_type| match_type.eq_ignore_ascii_case("NONE"));
         Ok(is_match.then_some(matched))
+    }
+
+    async fn request_with_retries(&self, name: &str) -> Result<reqwest::Response, GbifError> {
+        let mut attempts = 0;
+        loop {
+            attempts += 1;
+            self.wait_for_request_slot().await;
+
+            match self
+                .http
+                .get(&self.base_url)
+                .query(&[("name", name)])
+                .send()
+                .await
+            {
+                Ok(response) if response.status() == StatusCode::OK => return Ok(response),
+                Ok(response) => {
+                    let status = response.status();
+                    let retryable =
+                        status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error();
+                    if !retryable || attempts >= MAX_ATTEMPTS {
+                        return Err(GbifError::Status(status.as_u16()));
+                    }
+
+                    let delay = retry_delay(&response, attempts);
+                    tokio::time::sleep(delay).await;
+                }
+                Err(error)
+                    if (error.is_timeout() || error.is_connect()) && attempts < MAX_ATTEMPTS =>
+                {
+                    tokio::time::sleep(retry_backoff(attempts)).await;
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
+    }
+
+    async fn wait_for_request_slot(&self) {
+        let mut last_request = self.last_request.lock().await;
+        if let Some(previous) = last_request.as_ref() {
+            tokio::time::sleep(REQUEST_INTERVAL.saturating_sub(previous.elapsed())).await;
+        }
+        *last_request = Some(tokio::time::Instant::now());
     }
 
     fn read_cache(&self, key: &str) -> Result<Option<String>, GbifError> {
@@ -144,6 +185,34 @@ impl GbifClient {
     }
 }
 
+fn retry_delay(response: &reqwest::Response, attempt: u32) -> Duration {
+    let retry_after = response
+        .headers()
+        .get(reqwest::header::RETRY_AFTER)
+        .and_then(|value| value.to_str().ok())
+        .and_then(parse_retry_after);
+    retry_after
+        .unwrap_or_else(|| retry_backoff(attempt))
+        .max(retry_backoff(attempt))
+}
+
+fn parse_retry_after(value: &str) -> Option<Duration> {
+    if let Ok(seconds) = value.trim().parse::<u64>() {
+        return Some(Duration::from_secs(seconds));
+    }
+
+    let retry_at = httpdate::parse_http_date(value).ok()?;
+    Some(
+        retry_at
+            .duration_since(SystemTime::now())
+            .unwrap_or_default(),
+    )
+}
+
+fn retry_backoff(attempt: u32) -> Duration {
+    INITIAL_RETRY_DELAY * 2_u32.saturating_pow(attempt.saturating_sub(1))
+}
+
 fn unix_now() -> Result<u64, GbifError> {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -154,6 +223,8 @@ fn unix_now() -> Result<u64, GbifError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
     use std::time::{SystemTime, UNIX_EPOCH};
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -235,5 +306,75 @@ mod tests {
             .expect("valid no-match response should parse")
             .is_none());
         fs::remove_dir_all(cache_dir).expect("temporary cache should be removable");
+    }
+
+    #[tokio::test]
+    async fn lookup_retries_temporary_status_and_succeeds() {
+        let server = MockServer::start().await;
+        let cache_dir = test_cache_dir();
+        let client = GbifClient::new()
+            .expect("HTTP client should build")
+            .with_cache_dir(&cache_dir)
+            .with_base_url(format!("{}/v1/species/match", server.uri()));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let response_calls = Arc::clone(&calls);
+
+        Mock::given(method("GET"))
+            .and(path("/v1/species/match"))
+            .and(query_param("name", "Puma concolor"))
+            .respond_with(move |_request: &wiremock::Request| {
+                if response_calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                    ResponseTemplate::new(503)
+                } else {
+                    ResponseTemplate::new(200).set_body_string(
+                        r#"{"usageKey":2435099,"scientificName":"Puma concolor","class":"Mammalia","confidence":98,"matchType":"EXACT"}"#,
+                    )
+                }
+            })
+            .expect(2)
+            .mount(&server)
+            .await;
+
+        let matched = client
+            .lookup("Puma concolor")
+            .await
+            .expect("temporary failure should be retried")
+            .expect("second response should be returned");
+        assert_eq!(matched.usage_key, Some(2_435_099));
+        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        fs::remove_dir_all(cache_dir).expect("temporary cache should be removable");
+    }
+
+    #[tokio::test]
+    async fn lookup_stops_after_retry_limit() {
+        let server = MockServer::start().await;
+        let cache_dir = test_cache_dir();
+        let client = GbifClient::new()
+            .expect("HTTP client should build")
+            .with_cache_dir(&cache_dir)
+            .with_base_url(format!("{}/v1/species/match", server.uri()));
+        let calls = Arc::new(AtomicUsize::new(0));
+        let response_calls = Arc::clone(&calls);
+
+        Mock::given(method("GET"))
+            .and(path("/v1/species/match"))
+            .and(query_param("name", "Puma concolor"))
+            .respond_with(move |_request: &wiremock::Request| {
+                response_calls.fetch_add(1, Ordering::SeqCst);
+                ResponseTemplate::new(503)
+            })
+            .expect(MAX_ATTEMPTS as u64)
+            .mount(&server)
+            .await;
+
+        let error = client
+            .lookup("Puma concolor")
+            .await
+            .expect_err("retries should stop at the configured limit");
+        assert!(matches!(error, GbifError::Status(503)));
+        assert_eq!(calls.load(Ordering::SeqCst), MAX_ATTEMPTS as usize);
+        if cache_dir.exists() {
+            fs::remove_dir_all(cache_dir).expect("temporary cache should be removable");
+        }
     }
 }

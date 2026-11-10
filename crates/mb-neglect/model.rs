@@ -1,6 +1,8 @@
 use chrono::NaiveDateTime;
 use mb_client::{Client, MovebankError};
-use mb_taxonomy::{primary_class, resolve_taxon, GbifClient, GbifError, Overrides, TaxonClass};
+use mb_taxonomy::{
+    primary_class, resolve_taxon, split_taxon_field, GbifClient, GbifError, Overrides, TaxonClass,
+};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,8 +32,43 @@ pub enum NeglectError {
     Movebank(#[from] MovebankError),
     #[error("taxon resolution failed: {0}")]
     Taxonomy(#[from] GbifError),
+    #[error("study {study_id} requires license terms to be reviewed and accepted")]
+    LicenseRequired { study_id: i64, terms: Vec<u8> },
+    #[error("could not read license confirmation: {0}")]
+    LicensePrompt(#[from] std::io::Error),
     #[error("weight for class {class:?} must be finite and nonnegative")]
     InvalidWeight { class: TaxonClass },
+}
+
+fn study_taxon_candidates(raw: &str) -> Vec<String> {
+    let mut seen = HashSet::new();
+
+    split_taxon_field(raw)
+        .into_iter()
+        .filter(|name| {
+            let mut words = name.split_whitespace();
+            let (Some(genus), Some(species)) = (words.next(), words.next()) else {
+                return false;
+            };
+
+            genus.chars().next().is_some_and(char::is_uppercase)
+                && genus.chars().all(char::is_alphabetic)
+                && species.chars().next().is_some_and(char::is_lowercase)
+                && species
+                    .chars()
+                    .all(|character| character.is_alphabetic() || character == '-')
+        })
+        .filter(|name| seen.insert(name.to_ascii_lowercase()))
+        .map(str::to_owned)
+        .collect()
+}
+
+fn taxon_names_for_resolution(individual_names: Vec<String>, study_taxon_raw: &str) -> Vec<String> {
+    if individual_names.is_empty() {
+        study_taxon_candidates(study_taxon_raw)
+    } else {
+        individual_names
+    }
 }
 
 impl StudyRow {
@@ -63,12 +100,56 @@ impl StudyRow {
         client: &Client,
         overrides: &Overrides,
         gbif: Option<&GbifClient>,
+        limit_studies: Option<usize>,
     ) -> Result<Vec<StudyRow>, NeglectError> {
-        let studies = client.list_studies().await?;
+        Self::build_study_table_with_license_approval(
+            client,
+            overrides,
+            gbif,
+            None,
+            limit_studies,
+            |_, _| Ok(false),
+        )
+        .await
+    }
+
+    pub async fn build_study_table_with_license_approval<F>(
+        client: &Client,
+        overrides: &Overrides,
+        gbif: Option<&GbifClient>,
+        study_id: Option<i64>,
+        limit_studies: Option<usize>,
+        mut approve_license: F,
+    ) -> Result<Vec<StudyRow>, NeglectError>
+    where
+        F: FnMut(i64, &[u8]) -> Result<bool, std::io::Error>,
+    {
+        let mut studies = match study_id {
+            Some(id) => vec![client.get_study(id).await?],
+            None => client.list_studies().await?,
+        };
+        if let Some(limit) = limit_studies {
+            studies.truncate(limit);
+        }
         let mut rows = Vec::with_capacity(studies.len());
 
         for study in studies {
-            let individuals = client.get_individuals(study.id).await?;
+            let individuals = match client.get_individuals(study.id).await {
+                Ok(individuals) => individuals,
+                Err(MovebankError::LicenseRequired { terms }) => {
+                    if approve_license(study.id, &terms).map_err(NeglectError::LicensePrompt)? {
+                        client
+                            .get_individuals_after_accepting(study.id, &terms)
+                            .await?
+                    } else {
+                        return Err(NeglectError::LicenseRequired {
+                            study_id: study.id,
+                            terms,
+                        });
+                    }
+                }
+                Err(error) => return Err(error.into()),
+            };
             let mut seen_names = HashSet::new();
             let mut taxon_names = Vec::new();
             for name in individuals
@@ -82,17 +163,19 @@ impl StudyRow {
                 }
             }
 
-            let mut resolutions = Vec::with_capacity(taxon_names.len());
-            for name in &taxon_names {
-                resolutions.push(resolve_taxon(name, overrides, gbif).await?);
-            }
-
-            let mut row = StudyRow::new(study.id, study.name);
-            row.taxon_raw = if taxon_names.is_empty() {
+            let taxon_raw = if taxon_names.is_empty() {
                 study.taxon_ids.unwrap_or_default()
             } else {
                 taxon_names.join("; ")
             };
+            let names_to_resolve = taxon_names_for_resolution(taxon_names, &taxon_raw);
+            let mut resolutions = Vec::with_capacity(names_to_resolve.len());
+            for name in &names_to_resolve {
+                resolutions.push(resolve_taxon(name, overrides, gbif).await?);
+            }
+
+            let mut row = StudyRow::new(study.id, study.name);
+            row.taxon_raw = taxon_raw;
             row.class = primary_class(&resolutions);
             row.n_individuals = study.number_of_individuals;
             row.n_locations = study.number_of_deployed_locations;
@@ -266,6 +349,26 @@ fn percentile_f64(sorted_values: &[f64], value: f64) -> Option<f64> {
 mod tests {
     use super::*;
     use chrono::{Duration, NaiveDate};
+
+    #[test]
+    fn study_taxon_candidates_split_scientific_names_and_ignore_ids() {
+        assert_eq!(
+            study_taxon_candidates("Gyps coprotheres,Gyps africanus; Gyps coprotheres"),
+            vec!["Gyps coprotheres".to_owned(), "Gyps africanus".to_owned()]
+        );
+        assert!(study_taxon_candidates("12345,67890").is_empty());
+    }
+
+    #[test]
+    fn individual_taxon_names_take_precedence_over_study_taxa() {
+        assert_eq!(
+            taxon_names_for_resolution(
+                vec!["Haliaeetus leucocephalus".to_owned()],
+                "Gyps coprotheres,Gyps africanus"
+            ),
+            vec!["Haliaeetus leucocephalus".to_owned()]
+        );
+    }
 
     fn row(class: TaxonClass, individuals: Option<u32>, days: Option<f64>) -> StudyRow {
         StudyRow {

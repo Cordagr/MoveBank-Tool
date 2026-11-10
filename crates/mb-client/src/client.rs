@@ -10,7 +10,59 @@ const BASE_URL: &str = "https://www.movebank.org/movebank/service/direct-read";
 const STUDY_ATTRIBUTES: &str = "id,name,taxon_ids,number_of_deployments,number_of_individuals,number_of_deployed_locations,timestamp_first_deployed_location,timestamp_last_deployed_location,license_type,i_have_download_access";
 const INDIVIDUAL_ATTRIBUTES: &str =
     "id,local_identifier,individual_taxon_canonical_name,timestamp_start,timestamp_end";
-const EVENT_ATTRIBUTES: &str = "individual_id,timestamp,location_long,location_lat,visible";
+const EVENT_ATTRIBUTES: &str =
+    "individual_id,deployment_id,timestamp,location_long,location_lat,visible";
+
+fn parse_individuals(csv_text: &str) -> Result<Vec<Individual>, MovebankError> {
+    csv::Reader::from_reader(csv_text.as_bytes())
+        .deserialize::<Individual>()
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(Into::into)
+}
+
+fn parse_deployments(csv_text: &str) -> Result<Vec<Deployment>, MovebankError> {
+    csv::Reader::from_reader(csv_text.as_bytes())
+        .deserialize::<Deployment>()
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(Into::into)
+}
+
+fn parse_events(csv_text: &str) -> Result<Vec<Fix>, MovebankError> {
+    csv::Reader::from_reader(csv_text.as_bytes())
+        .deserialize::<Fix>()
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(Into::into)
+}
+
+fn event_query_params(query: &EventQuery) -> Vec<(String, String)> {
+    let mut params = vec![
+        ("entity_type".to_owned(), "event".to_owned()),
+        ("study_id".to_owned(), query.study_id.to_string()),
+        ("attributes".to_owned(), EVENT_ATTRIBUTES.to_owned()),
+    ];
+    if let Some(individuals) = &query.individuals {
+        params.push((
+            "individual_local_identifier".to_owned(),
+            individuals.join(","),
+        ));
+    }
+    if let Some(sensor_type_id) = query.sensor_type_id {
+        params.push(("sensor_type_id".to_owned(), sensor_type_id.to_string()));
+    }
+    if let Some(start) = query.start {
+        params.push((
+            "timestamp_start".to_owned(),
+            start.format("%Y%m%d%H%M%S%3f").to_string(),
+        ));
+    }
+    if let Some(end) = query.end {
+        params.push((
+            "timestamp_end".to_owned(),
+            end.format("%Y%m%d%H%M%S%3f").to_string(),
+        ));
+    }
+    params
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum MovebankError {
@@ -24,6 +76,8 @@ pub enum MovebankError {
     LicenseStore(#[from] LicenseStoreError),
     #[error("bad credentials (401)")]
     BadCredentials,
+    #[error("authentication is required for this request (401)")]
+    AuthenticationRequired,
     #[error("no access to this data (403)")]
     Forbidden,
     #[error("license terms must be accepted first")]
@@ -177,6 +231,9 @@ impl Client {
 
         match resp.status().as_u16() {
             200 => {}
+            401 if matches!(&self.auth, Auth::Anonymous) => {
+                return Err(MovebankError::AuthenticationRequired)
+            }
             401 => return Err(MovebankError::BadCredentials),
             403 => return Err(MovebankError::Forbidden),
             status => return Err(MovebankError::Status(status)),
@@ -257,69 +314,106 @@ impl Client {
     }
 
     pub async fn get_individuals(&self, study_id: i64) -> Result<Vec<Individual>, MovebankError> {
-        let study_id = study_id.to_string();
-        let csv_text = self
-            .get_csv(&[
-                ("entity_type", "individual"),
-                ("study_id", study_id.as_str()),
-                ("attributes", INDIVIDUAL_ATTRIBUTES),
-            ])
-            .await?;
+        let id = study_id;
+        let study_id = id.to_string();
+        let params = [
+            ("entity_type", "individual"),
+            ("study_id", study_id.as_str()),
+            ("attributes", INDIVIDUAL_ATTRIBUTES),
+        ];
 
-        let individuals = csv::Reader::from_reader(csv_text.as_bytes())
-            .deserialize::<Individual>()
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(individuals)
+        let csv_text = match self.get_csv(&params).await {
+            Ok(csv_text) => csv_text,
+            Err(MovebankError::LicenseRequired { terms }) => {
+                if self.has_accepted_license(id, &terms)? {
+                    self.get_csv_after_accepting(&params, &terms).await?
+                } else {
+                    return Err(MovebankError::LicenseRequired { terms });
+                }
+            }
+            Err(error) => return Err(error),
+        };
+
+        parse_individuals(&csv_text)
+    }
+
+    pub async fn get_individuals_after_accepting(
+        &self,
+        study_id: i64,
+        terms: &[u8],
+    ) -> Result<Vec<Individual>, MovebankError> {
+        let study_id = study_id.to_string();
+        let params = [
+            ("entity_type", "individual"),
+            ("study_id", study_id.as_str()),
+            ("attributes", INDIVIDUAL_ATTRIBUTES),
+        ];
+        let csv_text = self.get_csv_after_accepting(&params, terms).await?;
+        parse_individuals(&csv_text)
     }
 
     pub async fn get_deployments(&self, study_id: i64) -> Result<Vec<Deployment>, MovebankError> {
-        let study_id = study_id.to_string();
-        let csv_text = self
-            .get_csv(&[
-                ("entity_type", "deployment"),
-                ("study_id", study_id.as_str()),
-            ])
-            .await?;
+        let study_id_string = study_id.to_string();
+        let params = [
+            ("entity_type", "deployment"),
+            ("study_id", study_id_string.as_str()),
+        ];
+        let csv_text = match self.get_csv(&params).await {
+            Ok(csv_text) => csv_text,
+            Err(MovebankError::LicenseRequired { terms })
+                if self.has_accepted_license(study_id, &terms)? =>
+            {
+                self.get_csv_after_accepting(&params, &terms).await?
+            }
+            Err(error) => return Err(error),
+        };
+        parse_deployments(&csv_text)
+    }
 
-        let deployments = csv::Reader::from_reader(csv_text.as_bytes())
-            .deserialize::<Deployment>()
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(deployments)
+    pub async fn get_deployments_after_accepting(
+        &self,
+        study_id: i64,
+        terms: &[u8],
+    ) -> Result<Vec<Deployment>, MovebankError> {
+        let study_id_string = study_id.to_string();
+        let params = [
+            ("entity_type", "deployment"),
+            ("study_id", study_id_string.as_str()),
+        ];
+        let csv_text = self.get_csv_after_accepting(&params, terms).await?;
+        parse_deployments(&csv_text)
     }
 
     pub async fn get_events(&self, query: &EventQuery) -> Result<Vec<Fix>, MovebankError> {
-        let study_id = query.study_id.to_string();
-        let sensor_type_id = query.sensor_type_id.map(|id| id.to_string());
-        let individuals = query.individuals.as_ref().map(|ids| ids.join(","));
-        let start = query
-            .start
-            .map(|timestamp| timestamp.format("%Y%m%d%H%M%S%3f").to_string());
-        let end = query
-            .end
-            .map(|timestamp| timestamp.format("%Y%m%d%H%M%S%3f").to_string());
-        let mut params = vec![
-            ("entity_type", "event"),
-            ("study_id", study_id.as_str()),
-            ("attributes", EVENT_ATTRIBUTES),
-        ];
-        if let Some(individuals) = individuals.as_deref() {
-            params.push(("individual_local_identifier", individuals));
-        }
-        if let Some(sensor_type_id) = sensor_type_id.as_deref() {
-            params.push(("sensor_type_id", sensor_type_id));
-        }
-        if let Some(start) = start.as_deref() {
-            params.push(("timestamp_start", start));
-        }
-        if let Some(end) = end.as_deref() {
-            params.push(("timestamp_end", end));
-        }
+        let owned_params = event_query_params(query);
+        let params: Vec<_> = owned_params
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let csv_text = match self.get_csv(&params).await {
+            Ok(csv_text) => csv_text,
+            Err(MovebankError::LicenseRequired { terms })
+                if self.has_accepted_license(query.study_id, &terms)? =>
+            {
+                self.get_csv_after_accepting(&params, &terms).await?
+            }
+            Err(error) => return Err(error),
+        };
+        parse_events(&csv_text)
+    }
 
-        let csv_text = self.get_csv(&params).await?;
-        let events = csv::Reader::from_reader(csv_text.as_bytes())
-            .deserialize::<Fix>()
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(events)
+    pub async fn get_events_after_accepting(
+        &self,
+        query: &EventQuery,
+        terms: &[u8],
+    ) -> Result<Vec<Fix>, MovebankError> {
+        let owned_params = event_query_params(query);
+        let params: Vec<_> = owned_params
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let csv_text = self.get_csv_after_accepting(&params, terms).await?;
+        parse_events(&csv_text)
     }
 
     pub fn with_cache_dir(mut self, path: impl Into<PathBuf>) -> Self {
@@ -473,7 +567,7 @@ mod tests {
             .and(query_param("timestamp_start", "20080604133045000"))
             .and(query_param("timestamp_end", "20080604133046000"))
             .respond_with(ResponseTemplate::new(200).set_body_string(
-                "individual_id,timestamp,location_long,location_lat,visible\n2911059,2008-06-04 13:30:45.999,-85.1520954,-1.9960011,false",
+                "individual_id,deployment_id,timestamp,location_long,location_lat,visible\n2911059,9472219,2008-06-04 13:30:45.999,-85.1520954,-1.9960011,false",
             ))
             .expect(1)
             .mount(&mock_server)
@@ -517,6 +611,7 @@ mod tests {
             .await?;
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].individual_id, "2911059");
+        assert_eq!(events[0].deployment_id, Some(9_472_219));
         assert_eq!(events[0].lon, -85.1520954);
         assert_eq!(events[0].lat, -1.9960011);
         assert_eq!(events[0].outlier, Some(true));
@@ -560,6 +655,149 @@ mod tests {
         assert_eq!(studies.len(), 1);
         assert_eq!(studies[0].id, 2_911_040);
         assert_eq!(studies[0].name, "Galapagos Albatrosses");
+
+        fs::remove_dir_all(cache_dir).expect("test cache directory should be removable");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn individual_license_terms_are_explicitly_accepted() -> Result<(), MovebankError> {
+        let mock_server = MockServer::start().await;
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after Unix epoch")
+            .as_nanos();
+        let cache_dir = std::env::temp_dir().join(format!(
+            "mb-client-individual-license-test-{}-{nonce}",
+            std::process::id()
+        ));
+        let client = Client::new(Auth::Anonymous)?
+            .with_cache_dir(&cache_dir)
+            .change_url(mock_server.uri());
+        let study_id = 2_911_040;
+        let terms = b"Please accept these individual metadata terms.";
+        let license_md5 = format!("{:x}", Md5::digest(terms));
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .and(query_param("entity_type", "individual"))
+            .and(query_param("study_id", "2911040"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("accept-license", "true")
+                    .set_body_bytes(terms.to_vec()),
+            )
+            .up_to_n_times(1)
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .and(query_param("entity_type", "individual"))
+            .and(query_param("study_id", "2911040"))
+            .and(query_param("license-md5", &license_md5))
+            .respond_with(ResponseTemplate::new(200).set_body_string(
+                "id,local_identifier,individual_taxon_canonical_name,timestamp_start,timestamp_end\n1,F1,Puma concolor,,",
+            ))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        assert!(matches!(
+            client.get_individuals(study_id).await,
+            Err(MovebankError::LicenseRequired { .. })
+        ));
+
+        let individuals = client
+            .get_individuals_after_accepting(study_id, terms)
+            .await?;
+        assert_eq!(individuals.len(), 1);
+        assert_eq!(
+            individuals[0].individual_taxon_canonical_name.as_deref(),
+            Some("Puma concolor")
+        );
+        assert!(client.has_accepted_license(study_id, terms)?);
+
+        fs::remove_dir_all(cache_dir).expect("test cache directory should be removable");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn event_license_terms_are_explicitly_accepted() -> Result<(), MovebankError> {
+        let mock_server = MockServer::start().await;
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system clock should be after Unix epoch")
+            .as_nanos();
+        let cache_dir = std::env::temp_dir().join(format!(
+            "mb-client-event-license-test-{}-{nonce}",
+            std::process::id()
+        ));
+        let client = Client::new(Auth::Anonymous)?
+            .with_cache_dir(&cache_dir)
+            .change_url(mock_server.uri());
+        let study_id = 2_911_040;
+        let terms = b"Please accept these event data terms.";
+        let license_md5 = format!("{:x}", Md5::digest(terms));
+        let query = EventQuery {
+            study_id,
+            individuals: None,
+            sensor_type_id: Some(653),
+            start: Some(
+                chrono::NaiveDate::from_ymd_opt(2024, 1, 1)
+                    .expect("valid date")
+                    .and_hms_opt(0, 0, 0)
+                    .expect("valid time"),
+            ),
+            end: Some(
+                chrono::NaiveDate::from_ymd_opt(2024, 1, 2)
+                    .expect("valid date")
+                    .and_hms_opt(0, 0, 0)
+                    .expect("valid time"),
+            ),
+        };
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .and(query_param("entity_type", "event"))
+            .and(query_param("study_id", "2911040"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("accept-license", "true")
+                    .set_body_bytes(terms.to_vec()),
+            )
+            .up_to_n_times(1)
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .and(query_param("entity_type", "event"))
+            .and(query_param("study_id", "2911040"))
+            .and(query_param("sensor_type_id", "653"))
+            .and(query_param("timestamp_start", "20240101000000000"))
+            .and(query_param("timestamp_end", "20240102000000000"))
+            .and(query_param("license-md5", &license_md5))
+            .respond_with(ResponseTemplate::new(200).set_body_string(
+                "individual_id,deployment_id,timestamp,location_long,location_lat,visible\n2911059,9472219,2024-01-01 01:00:00.000,-85.1,-1.9,true",
+            ))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        assert!(matches!(
+            client.get_events(&query).await,
+            Err(MovebankError::LicenseRequired { .. })
+        ));
+
+        let events = client.get_events_after_accepting(&query, terms).await?;
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].individual_id, "2911059");
+        assert_eq!(events[0].deployment_id, Some(9_472_219));
+        assert_eq!(events[0].outlier, Some(false));
+        assert!(client.has_accepted_license(study_id, terms)?);
 
         fs::remove_dir_all(cache_dir).expect("test cache directory should be removable");
         Ok(())
@@ -720,6 +958,28 @@ mod tests {
         assert!(matches!(
             client.get_csv(&[("entity_type", "study")]).await,
             Err(MovebankError::Forbidden)
+        ));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn anonymous_unauthorized_response_reports_authentication_required(
+    ) -> Result<(), MovebankError> {
+        let mock_server = MockServer::start().await;
+        let client = Client::new(Auth::Anonymous)?.change_url(mock_server.uri());
+
+        Mock::given(method("GET"))
+            .and(path("/"))
+            .and(query_param("entity_type", "study"))
+            .respond_with(ResponseTemplate::new(401))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        assert!(matches!(
+            client.get_csv(&[("entity_type", "study")]).await,
+            Err(MovebankError::AuthenticationRequired)
         ));
 
         Ok(())

@@ -1,1 +1,4 @@
 developer_guide.txt
+/target/
+**/data/cache/
+*.csv

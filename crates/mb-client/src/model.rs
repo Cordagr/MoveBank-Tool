@@ -38,6 +38,8 @@ pub struct EventQuery {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Fix {
     pub individual_id: String,
+    #[serde(default)]
+    pub deployment_id: Option<i64>,
     #[serde(deserialize_with = "deserialize_movebank_datetime")]
     pub timestamp: NaiveDateTime,
     #[serde(rename = "location_long")]

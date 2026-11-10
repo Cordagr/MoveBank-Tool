@@ -1,8 +1,9 @@
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
 use mb_client::{Auth, Client};
-use mb_neglect::{Filter, StudyRow};
+use mb_neglect::{Filter, NeglectError, StudyRow};
 use mb_taxonomy::{GbifClient, Overrides, TaxonClass};
+use std::io::{self, IsTerminal, Write};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Parser)]
@@ -26,6 +27,15 @@ struct Args {
     overrides: Option<PathBuf>,
     #[arg(long, help = "Use manual overrides only; skip GBIF lookups")]
     no_gbif: bool,
+    #[arg(long, help = "Process only the first N studies")]
+    limit_studies: Option<usize>,
+    #[arg(long, help = "Process only this Movebank study ID")]
+    study_id: Option<i64>,
+    #[arg(
+        long,
+        help = "After reviewing license terms, prompt before accepting them"
+    )]
+    accept_license: bool,
 }
 
 #[derive(Clone, Debug, ValueEnum)]
@@ -68,10 +78,46 @@ async fn main() -> Result<()> {
     } else {
         Some(GbifClient::new().context("could not create GBIF client")?)
     };
-    let client = Client::new(Auth::Anonymous).context("could not create Movebank client")?;
-    let mut rows = StudyRow::build_study_table(&client, &overrides, gbif.as_ref())
-        .await
-        .context("could not build the study table")?;
+    let client = movebank_client()?;
+    let accept_license = args.accept_license;
+    let mut approve_license = |study_id, terms: &[u8]| -> io::Result<bool> {
+        eprintln!(
+            "Movebank license terms for study {study_id}:\n{}",
+            String::from_utf8_lossy(terms)
+        );
+        if !accept_license {
+            return Ok(false);
+        }
+        if !io::stdin().is_terminal() {
+            eprintln!("License acceptance requires an interactive terminal.");
+            return Ok(false);
+        }
+
+        eprint!("Type ACCEPT if you have read and agree to these terms: ");
+        io::stderr().flush()?;
+        let mut answer = String::new();
+        io::stdin().read_line(&mut answer)?;
+        Ok(answer.trim() == "ACCEPT")
+    };
+    let mut rows = match StudyRow::build_study_table_with_license_approval(
+        &client,
+        &overrides,
+        gbif.as_ref(),
+        args.study_id,
+        args.limit_studies,
+        &mut approve_license,
+    )
+    .await
+    {
+        Ok(rows) => rows,
+        Err(NeglectError::LicenseRequired { study_id, .. }) if !accept_license => {
+            anyhow::bail!("review study {study_id} terms above, then rerun with --accept-license")
+        }
+        Err(NeglectError::LicenseRequired { study_id, .. }) => {
+            anyhow::bail!("license terms for study {study_id} were not accepted")
+        }
+        Err(error) => return Err(error).context("could not build the study table"),
+    };
     StudyRow::neglect_score(&mut rows, None).context("could not score the studies")?;
 
     report_classification(&rows);
@@ -94,6 +140,22 @@ async fn main() -> Result<()> {
         .with_context(|| format!("could not write {}", args.out.display()))?;
     println!("Wrote {} studies to {}", rows.len(), args.out.display());
     Ok(())
+}
+
+fn movebank_client() -> Result<Client> {
+    let has_user = std::env::var_os("MOVEBANK_USER").is_some();
+    let has_password = std::env::var_os("MOVEBANK_PASSWORD").is_some();
+
+    match (has_user, has_password) {
+        (true, true) => {
+            Client::from_env().context("could not create authenticated Movebank client")
+        }
+        (false, false) => {
+            Client::new(Auth::Anonymous).context("could not create anonymous Movebank client")
+        }
+        (true, false) => anyhow::bail!("MOVEBANK_PASSWORD is required when MOVEBANK_USER is set"),
+        (false, true) => anyhow::bail!("MOVEBANK_USER is required when MOVEBANK_PASSWORD is set"),
+    }
 }
 
 fn parse_days(value: &str) -> std::result::Result<f64, String> {
@@ -186,12 +248,20 @@ fn class_name(class: &TaxonClass) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_days;
+    use super::{parse_days, Args};
+    use clap::Parser;
 
     #[test]
     fn min_days_must_be_finite_and_nonnegative() {
         assert_eq!(parse_days("90").expect("valid days"), 90.0);
         assert!(parse_days("-1").is_err());
         assert!(parse_days("NaN").is_err());
+    }
+
+    #[test]
+    fn parses_study_id() {
+        let args = Args::try_parse_from(["mbbrowse", "--study-id", "2034278428"])
+            .expect("study ID should parse");
+        assert_eq!(args.study_id, Some(2_034_278_428));
     }
 }

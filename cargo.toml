@@ -4,5 +4,6 @@ members = [
     "crates/mb-taxonomy",
     "crates/mb-neglect",
     "crates/mbbrowse",
+    "crates/mb-tageffect",
 ]
 resolver = "2"
